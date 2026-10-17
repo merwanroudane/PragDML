@@ -1,0 +1,65 @@
+{
+  "_note": "Published values transcribed from the two source papers. These are DOCUMENTATION, not reproducible targets: the multimodal data of arXiv:2610.01935 is not public (see src/pragdml/datasets/SOURCES.md). The test suite asserts the ALGEBRA these numbers satisfy, never the numbers themselves. The 401(k) block IS reproducible and is asserted in test_acceptance_401k.py.",
+
+  "pragmatic_dml_table1": {
+    "_source": "arXiv:2610.01935v2, Table 1, average partial derivatives by information set",
+    "_outcome": "change in oriented log sales-rank proxy; treatment: change in log price",
+    "rows": [
+      {"set": "Text",            "estimate": -1.092, "se": 0.015, "ci": [-1.120, -1.063]},
+      {"set": "Image",           "estimate": -1.092, "se": 0.014, "ci": [-1.120, -1.065]},
+      {"set": "Tabular",         "estimate": -1.034, "se": 0.016, "ci": [-1.064, -1.003]},
+      {"set": "Text + image",    "estimate": -1.098, "se": 0.015, "ci": [-1.127, -1.069]},
+      {"set": "Text + tabular",  "estimate": -1.039, "se": 0.018, "ci": [-1.074, -1.004]},
+      {"set": "Image + tabular", "estimate": -1.056, "se": 0.015, "ci": [-1.085, -1.027]},
+      {"set": "Full multimodal", "estimate": -1.069, "se": 0.015, "ci": [-1.099, -1.040]},
+      {"set": "Star aggregate",  "estimate": -1.053, "se": 0.016, "ci": [-1.086, -1.021]}
+    ],
+    "star_weights_outcome": {"img+tab": 1.0},
+    "star_weights_riesz": {"txt+tab": 0.8433, "full": 0.1567}
+  },
+
+  "pragmatic_dml_table2": {
+    "_source": "arXiv:2610.01935v2, Table 2, full-versus-text calibration (Sec. 5.4)",
+    "outcome_r2_full": 0.0314,
+    "outcome_r2_text": 0.0297,
+    "riesz_loss_full": -254.24,
+    "riesz_loss_text": -252.02,
+    "cy2": 0.0017,
+    "cd2": 0.0088,
+    "rho_hat": 0.8654,
+    "r2_equal_strength": 0.0039
+  },
+
+  "pragmatic_dml_table3": {
+    "_source": "arXiv:2610.01935v2, Table 3, sensitivity of the full-model estimate",
+    "_centre": -1.069,
+    "_columns": ["rho", "r2", "p10", "lower", "theta", "upper", "p90"],
+    "rows": [
+      [1.0, 0.010, -1.156, -1.137, -1.069, -1.001, -0.982],
+      [1.0, 0.025, -1.260, -1.240, -1.069, -0.898, -0.879],
+      [1.0, 0.050, -1.436, -1.415, -1.069, -0.723, -0.705],
+      [0.5, 0.010, -1.122, -1.103, -1.069, -1.035, -1.016],
+      [0.5, 0.025, -1.174, -1.154, -1.069, -0.984, -0.965],
+      [0.5, 0.050, -1.262, -1.242, -1.069, -0.896, -0.877],
+      [0.2, 0.010, -1.102, -1.083, -1.069, -1.055, -1.036],
+      [0.2, 0.025, -1.123, -1.103, -1.069, -1.035, -1.016],
+      [0.2, 0.050, -1.158, -1.138, -1.069, -1.000, -0.981]
+    ]
+  },
+
+  "long_story_short_401k": {
+    "_source": "arXiv:2112.13398v6 / REStat doi:10.1162/REST.a.1705, Sec. 5",
+    "_reproducible": true,
+    "naive_difference": 19559,
+    "n": 9915,
+    "ate_partially_linear": 9000,
+    "ate_nonparametric": 8000,
+    "robustness_value_plm": 0.054,
+    "robustness_value_npm": 0.045,
+    "ate_by_income_quartile_approx": [4000, null, null, 18000],
+    "confounding_scenario": {"cy2": 0.04, "cd_share": 0.03},
+    "bias_plm": 4196,
+    "ci_lower_plm_under_scenario": 2497,
+    "method": "random forests, 5-fold cross-fitting, 5 repetitions, median-aggregated"
+  }
+}

@@ -1,0 +1,110 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite both the software and the papers it implements."
+title: "pragdml: Pragmatic double machine learning with AI-learned representations"
+abstract: >-
+  A Python implementation of pragmatic DML with AI-learned representations:
+  cross-fitted double machine learning with learned Riesz representers, star and
+  convex aggregation over menus of pipelines, and omitted-information sensitivity
+  analysis with root-n inference for the region endpoints.
+type: software
+authors:
+  - family-names: Roudane
+    given-names: Merwan
+    email: merwanroudane920@gmail.com
+version: 0.1.0
+date-released: "2026-10-17"
+license: MIT
+repository-code: "https://github.com/merwanroudane/PragDML"
+url: "https://merwanroudane.github.io/PragDML/"
+keywords:
+  - double machine learning
+  - causal inference
+  - Riesz representer
+  - sensitivity analysis
+  - omitted variable bias
+  - representation learning
+  - econometrics
+references:
+  - type: article
+    title: "Pragmatic DML with AI-Learned Representations"
+    year: 2026
+    notes: "arXiv:2610.01935"
+    authors:
+      - family-names: "Aradillas Fernandez"
+        given-names: "Andres"
+      - family-names: Chernozhukov
+        given-names: Victor
+      - family-names: Cinelli
+        given-names: Carlos
+      - family-names: Klaassen
+        given-names: Sven
+      - family-names: Newey
+        given-names: Whitney
+      - family-names: Spindler
+        given-names: Martin
+      - family-names: Teichert-Kluge
+        given-names: Jan
+      - family-names: Vijaykumar
+        given-names: Suhas
+  - type: article
+    title: "Long Story Short: Omitted Variable Bias in Causal Machine Learning"
+    journal: "Review of Economics and Statistics"
+    year: 2026
+    doi: "10.1162/REST.a.1705"
+    authors:
+      - family-names: Chernozhukov
+        given-names: Victor
+      - family-names: Cinelli
+        given-names: Carlos
+      - family-names: Newey
+        given-names: "Whitney K."
+      - family-names: Sharma
+        given-names: Amit
+      - family-names: Syrgkanis
+        given-names: Vasilis
+  - type: article
+    title: "Automatic Debiased Machine Learning of Causal and Structural Effects"
+    journal: Econometrica
+    volume: 90
+    issue: 3
+    start: 967
+    end: 1027
+    year: 2022
+    authors:
+      - family-names: Chernozhukov
+        given-names: Victor
+      - family-names: Newey
+        given-names: "Whitney K."
+      - family-names: Singh
+        given-names: Rahul
+  - type: article
+    title: "Double/Debiased Machine Learning for Treatment and Structural Parameters"
+    journal: "The Econometrics Journal"
+    volume: 21
+    issue: 1
+    year: 2018
+    authors:
+      - family-names: Chernozhukov
+        given-names: Victor
+      - family-names: Chetverikov
+        given-names: Denis
+      - family-names: Demirer
+        given-names: Mert
+      - family-names: Duflo
+        given-names: Esther
+      - family-names: Hansen
+        given-names: Christian
+      - family-names: Newey
+        given-names: Whitney
+      - family-names: Robins
+        given-names: James
+  - type: conference-paper
+    title: "Localization, Convexity, and Star Aggregation"
+    collection-title: "Advances in Neural Information Processing Systems"
+    volume: 34
+    start: 4570
+    end: 4581
+    year: 2021
+    authors:
+      - family-names: Vijaykumar
+        given-names: Suhas

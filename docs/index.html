@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>pragdml — Pragmatic DML with AI-learned representations</title>
+<meta name="description" content="Python package for causal inference when controls are AI-learned representations: cross-fitted DML with learned Riesz representers, star aggregation, and omitted-information sensitivity analysis.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-light.min.css">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow">Python package</div>
+    <h1>pragdml</h1>
+    <p class="tagline">Causal inference when your controls are <strong>AI-learned representations</strong>.</p>
+    <div class="install"><code>pip install pragdml</code><button class="copy" data-copy="pip install pragdml">copy</button></div>
+    <nav class="cta">
+      <a class="btn primary" href="https://github.com/merwanroudane/PragDML">GitHub</a>
+      <a class="btn" href="https://pypi.org/project/pragdml/">PyPI</a>
+      <a class="btn" href="https://arxiv.org/abs/2610.01935">The paper</a>
+      <a class="btn" href="https://doi.org/10.1162/REST.a.1705">Parent paper</a>
+    </nav>
+  </div>
+  <div class="hero-fade"></div>
+</header>
+
+<nav class="toc">
+  <div class="wrap">
+    <a href="#problem">The problem</a>
+    <a href="#start">Quick start</a>
+    <a href="#theory">Theory</a>
+    <a href="#api">API</a>
+    <a href="#application">Application</a>
+    <a href="#reading">Reading output</a>
+    <a href="#beyond">Beyond the paper</a>
+    <a href="#refs">References</a>
+  </div>
+</nav>
+
+<main class="wrap">
+
+<section id="problem">
+  <h2>The problem it solves</h2>
+  <p class="lede">You compress a rich covariate — a product description, an image, a clinical note — into an embedding, use it as a control, and report an ATE. <strong>That ATE is not the ATE you think it is.</strong></p>
+  <p>Replacing the covariate <span class="m">\(Z\)</span> by a learned representation <span class="m">\(X = x(Z,\lambda)\)</span> changes two things at once: the regression you adjust with, <em>and the population parameter your procedure is centred on</em>. The paper's central identity says exactly how much.</p>
+
+  <div class="bigmath">
+    <div class="m">\[\theta^{*} - \theta_{\lambda} \;=\; E\big[(g^{*}-g_{\lambda})(\alpha^{*}-\alpha_{\lambda})\big]\]</div>
+    <p class="caption">The gap is the <strong>product</strong> of two representation errors — one in the outcome regression <span class="m">\(g\)</span>, one in the balancing weight (Riesz representer) <span class="m">\(\alpha\)</span>. Not their sum.</p>
+  </div>
+
+  <div class="cards">
+    <div class="card">
+      <div class="num">1</div>
+      <h3>Compress a lot, safely</h3>
+      <p>The representation need not reconstruct <span class="m">\(Z\)</span>. It only has to preserve <em>one</em> of the two objects. If either error is small, the target barely moves.</p>
+    </div>
+    <div class="card">
+      <div class="num">2</div>
+      <h3>Fine-tune inside the folds</h3>
+      <p>Learn the representation fold-wise and the usual DML inference still holds — with no stability or differentiability condition on the tuning algorithm.</p>
+    </div>
+    <div class="card">
+      <div class="num">3</div>
+      <h3>When loss is material, get a region</h3>
+      <p>An identified interval for the true parameter, root-<span class="m">\(n\)</span> inference for its endpoints, and a <strong>robustness value</strong>: one number for how strong the discarded information must be to overturn your sign.</p>
+    </div>
+  </div>
+</section>
+
+<section id="start">
+  <h2>Sixty seconds</h2>
+<pre><code class="language-python">import numpy as np
+from pragdml import PragmaticDML
+
+rng = np.random.default_rng(0)
+X = rng.normal(size=(2000, 5))                 # your embedding goes here
+e = 1 / (1 + np.exp(-X[:, 0]))                 # confounded assignment
+D = (rng.uniform(size=2000) &lt; e).astype(float)
+Y = 2.0 * D + X[:, 0] - 0.5 * X[:, 1] + rng.normal(size=2000)
+
+res = PragmaticDML(functional="ate", seed=0).fit(Y, D, X)
+print(res.summary())
+print("robustness value:", res.robustness_value())</code></pre>
+
+<pre class="out"><code>                  Pragmatic DML -- ATE
+
+  Observations      2000
+  Folds (K)         5
+  Variance          cross-fitted score variance (Eq. 12)
+  Interval refers to: representation-based target (theta_lambda, Eq. 3)
+==============================================================================
+quantity estimate std_error       t p_value [95% CI lower  upper]
+------------------------------------------------------------------------------
+     ATE   2.0183    0.0479 42.1392  0.0000        1.9244  2.1122  ***
+==============================================================================</code></pre>
+
+  <div class="note">Notice the line the table refuses to leave vague: <strong>which parameter the interval covers.</strong> That is the whole point of the method.</div>
+</section>
+
+<section id="theory">
+  <h2>Theory</h2>
+
+  <h3>Setup</h3>
+  <p>Observe <span class="m">\(O=(Y,D,Z)\)</span>. Write <span class="m">\(W^{*}=(D,Z)\)</span> for the full information and <span class="m">\(W_\lambda=(D,X)\)</span> for what the representation retains. The targets are continuous linear functionals of the regression:</p>
+  <div class="m">\[\theta^{*}=E[m(O,g^{*})],\qquad \theta_{\lambda}=E[m(O,g_{\lambda})].\]</div>
+  <p>For the binary ATE, <span class="m">\(m(O,h)=h(1,Z)-h(0,Z)\)</span>, and <span class="m">\(\theta_\lambda\)</span> is the <strong>average predictive effect</strong>: the treatment contrast when you condition only on <span class="m">\((D,X)\)</span>.</p>
+
+  <h3>The Riesz representer</h3>
+  <p>Each functional has a unique <span class="m">\(\alpha\)</span> with <span class="m">\(E[m(O,h)]=E[h\,\alpha]\)</span>. <code>pragdml</code> learns it <em>variationally</em>, by minimising the Riesz loss</p>
+  <div class="m">\[L(\alpha)=E\big[\alpha(W)^2-2\,m(O,\alpha)\big],\]</div>
+  <p>which over the span of a feature map is a quadratic with a closed-form minimiser — the <strong>Riesz normal equations</strong> <span class="m">\(Qc=r\)</span>, with <span class="m">\(Q=P_n[\varphi\varphi']\)</span> and <span class="m">\(r_j=P_n[m(O,\varphi_j)]\)</span>. No propensity score is inverted, so no near-zero denominator can blow up.</p>
+
+  <h3>The orthogonal score</h3>
+  <div class="m">\[\psi(O;g,\alpha)=m(O,g)+\alpha(W)\{Y-g(W)\}\]</div>
+  <p>Its population drift away from the target is <em>exactly</em> a mixed-bias term, <span class="m">\(-E[(g-g_0)(\alpha-\alpha_0)]\)</span>, so first-stage error enters as a product rather than linearly. That is why each nuisance need only converge at <span class="m">\(o(n^{-1/4})\)</span>, and why faster learning of one compensates for slower learning of the other.</p>
+
+  <h3>The inferential hierarchy</h3>
+  <table class="tbl">
+    <thead><tr><th>You assume</th><th>The interval covers</th><th>At what variance</th></tr></thead>
+    <tbody>
+      <tr><td>Assumption 1 only</td><td><span class="m">\(\theta_\lambda\)</span>, the representation's own target</td><td>the short score's</td></tr>
+      <tr><td>+ target adaptivity (Def. 1)</td><td><span class="m">\(\theta^{*}\)</span>, the causal parameter</td><td>the short score's</td></tr>
+      <tr><td>+ adaptive efficiency (Def. 2)</td><td><span class="m">\(\theta^{*}\)</span></td><td>the semiparametric bound</td></tr>
+    </tbody>
+  </table>
+  <p>Target adaptivity decides <em>which</em> parameter is covered; adaptive efficiency decides <em>how wide</em> the interval has to be. Every result object records which it is claiming.</p>
+
+  <h3>Sensitivity, when adaptivity is not defensible</h3>
+  <div class="m">\[\theta^{*}-\theta_{0}=\rho\cdot C_Y\cdot C_D\cdot S\]</div>
+  <table class="tbl">
+    <thead><tr><th>Term</th><th>Meaning</th><th>Identified?</th></tr></thead>
+    <tbody>
+      <tr><td><span class="m">\(S^2=E[(Y-g_0)^2]\,E[\alpha_0^2]\)</span></td><td>the scale of any possible bias</td><td class="yes">yes — estimated by DML</td></tr>
+      <tr><td><span class="m">\(C_Y^2\)</span></td><td>share of residual outcome variation the omitted information could explain</td><td class="no">no — you assume it</td></tr>
+      <tr><td><span class="m">\(C_D^2\)</span></td><td>the same for the balancing weight</td><td class="no">no — you assume it</td></tr>
+      <tr><td><span class="m">\(\rho\in[-1,1]\)</span></td><td><strong>alignment</strong> of the two omitted components</td><td class="no">no — you assume it</td></tr>
+    </tbody>
+  </table>
+  <div class="note warn"><strong><span class="m">\(\rho\)</span> is not a strength.</strong> Take <span class="m">\(D=U^2\)</span>, <span class="m">\(Y=D+U\)</span>. Here <span class="m">\(U\)</span> explains 100% of the residual variation in both equations — yet <span class="m">\(U^2\)</span> is uncorrelated with <span class="m">\(U\)</span>, so the bias is exactly <em>zero</em>. Confounding must be strong <em>and similarly shaped</em> in both equations to bias anything.</div>
+
+  <p><a class="more" href="methods.md">Full step → equation map, including every proposition and both documented inconsistencies in the source paper →</a></p>
+</section>
+
+<section id="api">
+  <h2>API</h2>
+
+  <h3>Estimators</h3>
+  <table class="tbl api">
+    <tbody>
+      <tr><td><code>PragmaticDML</code></td><td>One information set. Cross-fitted DML with a learned Riesz representer (Theorem 1).</td></tr>
+      <tr><td><code>PipelineDML</code></td><td>A <em>menu</em> of pipelines, aggregated fold-wise on pooled out-of-fold predictions (Theorems 4–5).</td></tr>
+      <tr><td><code>compare_information_sets</code></td><td>The paper's Table 1: every information set side by side, plus the aggregate.</td></tr>
+      <tr><td><code>pragmatic_dml</code></td><td>One-call wrapper for users who never write classes.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Targets</h3>
+  <table class="tbl api">
+    <tbody>
+      <tr><td><code>ATE</code></td><td><span class="m">\(E[g(1,X)-g(0,X)]\)</span> — binary treatment</td></tr>
+      <tr><td><code>AverageDerivative</code></td><td><span class="m">\(E[\partial_d g(d,X)|_{d=D}]\)</span> — continuous treatment (Eq. 67)</td></tr>
+      <tr><td><code>ATT</code></td><td>a ratio target, with a delta-method correction</td></tr>
+      <tr><td><code>AveragePotentialOutcome</code>, <code>WeightedATE</code>, <code>PolicyEffect</code></td><td>further members of the Riesz-linear class</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Sensitivity</h3>
+  <table class="tbl api">
+    <tbody>
+      <tr><td><code>res.sensitivity()</code></td><td>the <code>SensitivityAnalysis</code> for a fit</td></tr>
+      <tr><td><code>.interval(cy2=, cd2=, rho=)</code></td><td>the identified region (Eq. 51)</td></tr>
+      <tr><td><code>.evaluate(..., method=)</code></td><td>endpoints, standard errors and a confidence envelope</td></tr>
+      <tr><td><code>.grid(...)</code></td><td>the Table 3 scenario layout</td></tr>
+      <tr><td><code>.robustness_value()</code></td><td>the breakdown strength</td></tr>
+      <tr><td><code>benchmark_covariate(...)</code></td><td>calibrate scenarios from observed covariates</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Diagnostics</h3>
+  <table class="tbl api">
+    <tbody>
+      <tr><td><code>omitted_information_gap</code></td><td>Proposition 1, with the exact gap and its Cauchy–Schwarz bound</td></tr>
+      <tr><td><code>target_adaptivity</code>, <code>adaptive_efficiency</code></td><td>Definitions 1–2</td></tr>
+      <tr><td><code>product_rate</code>, <code>pooling_conditions</code></td><td>Eqs. (32), (45), (49) — evaluated on your numbers</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="application">
+  <h2>Complete application: 401(k) and net financial assets</h2>
+  <p>The package ships the 1991 SIPP extract — 9,915 households, the canonical dataset of this literature and the empirical application of the parent paper. Run it with <code>python examples/pension_401k.py</code>.</p>
+
+  <p><strong>The question.</strong> 401(k) eligibility is not randomised: it depends on your employer. The naive gap in net financial assets is <strong>$19,559</strong>, and it is confounded. How much survives adjustment — and how strong would unobserved <em>firm</em> characteristics have to be to overturn what is left?</p>
+
+<pre><code class="language-python">from pragdml import PragmaticDML
+from pragdml.datasets import load_pension
+
+Y, D, X = load_pension(return_X_y=True)
+res = PragmaticDML(functional="ate", n_rep=5, seed=20261017).fit(Y, D, X)
+sa  = res.sensitivity()</code></pre>
+
+  <div class="results">
+    <div class="stat"><div class="big">$19,559</div><div class="lab">naive gap</div></div>
+    <div class="stat"><div class="big">$7,855</div><div class="lab">adjusted ATE<br><span class="sub">se $1,392</span></div></div>
+    <div class="stat"><div class="big">4.2%</div><div class="lab">robustness value<br><span class="sub">published: 4.5%, 5.4%</span></div></div>
+  </div>
+
+  <p>The 95% interval <strong>[$5,126, $10,583]</strong> contains both figures the parent paper reports (about $9,000 and about $8,000), from a different nuisance learner.</p>
+
+  <h3>How fragile is it?</h3>
+  <figure>
+    <img src="assets/pension_sensitivity_contour.png" alt="Sensitivity contour plot: lower 95% bound on the causal effect across confounding scenarios, with the zero contour and robustness value marked">
+    <figcaption>Every point is a confounding scenario. Colour is the lower 95% bound on the true effect. The <strong>red dashed line is where that bound hits zero</strong>; beyond it the sign is no longer safe. The star sits where the 45° line crosses it — that is the robustness value, and it is why one number can stand in for the whole picture.</figcaption>
+  </figure>
+
+  <p class="reading"><strong>Reading it:</strong> unobserved firm characteristics explaining less than 4.2% of the residual variation — both of the outcome and of the treatment, in the worst-case alignment <span class="m">\(\rho=1\)</span> — cannot bring the lower confidence limit to zero.</p>
+
+  <h3>Estimates by information set</h3>
+  <table class="tbl data">
+    <thead><tr><th>information set</th><th>estimate</th><th>std error</th><th>CI lower</th><th>CI upper</th></tr></thead>
+    <tbody>
+      <tr><td>demographics</td><td>18,382</td><td>1,434</td><td>15,572</td><td>21,192</td></tr>
+      <tr><td>economic</td><td>7,828</td><td>1,432</td><td>5,021</td><td>10,636</td></tr>
+      <tr><td>assets</td><td>12,159</td><td>1,335</td><td>9,542</td><td>14,777</td></tr>
+      <tr><td>all</td><td>7,805</td><td>1,350</td><td>5,159</td><td>10,452</td></tr>
+      <tr class="agg"><td>Star aggregate</td><td>8,019</td><td>1,315</td><td>5,442</td><td>10,597</td></tr>
+    </tbody>
+  </table>
+  <figure>
+    <img src="assets/pension_information_sets.png" alt="Forest plot of the ATE by information set">
+    <figcaption>Each row is a <strong>different population target</strong> <span class="m">\(\theta_\lambda\)</span>, not a competing estimate of one number. Demographics alone barely adjusts anything; the economic block reproduces almost the whole adjustment. Income is doing the work — which is exactly why the parent paper benchmarks against it.</figcaption>
+  </figure>
+
+  <h3>The scenario grid</h3>
+  <figure>
+    <img src="assets/pension_sensitivity_grid.png" alt="Sensitivity regions across nine scenarios">
+    <figcaption>Thick bands are identified regions; thin whiskers add sampling uncertainty. The asymmetry the paper emphasises is visible: the <em>sign</em> is far more robust than the <em>magnitude</em>.</figcaption>
+  </figure>
+</section>
+
+<section id="reading">
+  <h2>Reading the output</h2>
+
+  <h3>Practical guidance</h3>
+  <div class="cards two">
+    <div class="card plain">
+      <h4>Flexible in <span class="m">\(X\)</span> is not optional</h4>
+      <p>On the 401(k) data a specification linear in the covariates returns about <strong>$4,900</strong> — essentially plain OLS — against about <strong>$7,900</strong> with splines. The treatment can be linear; the covariates usually cannot.</p>
+    </div>
+    <div class="card plain">
+      <h4>Trees cannot do derivatives</h4>
+      <p>A piecewise-constant learner has zero derivative almost everywhere, so forests and boosting are inadmissible for <code>AverageDerivative</code>. <code>pragdml</code> warns you.</p>
+    </div>
+    <div class="card plain">
+      <h4>Star or convex aggregation?</h4>
+      <p>Star costs <span class="m">\(\log M\)</span> and tolerates a huge menu; convex costs <span class="m">\(\sqrt{M\log n}\)</span> and needs <span class="m">\(M\log n=o(\sqrt n)\)</span>. Call <code>pooling_conditions</code> and decide on your numbers.</p>
+    </div>
+    <div class="card plain">
+      <h4>Learn the two heads separately</h4>
+      <p>The regression and the representer solve different problems and may select different candidates — the paper's own application does. Prediction quality alone does not summarise target preservation.</p>
+    </div>
+  </div>
+
+  <div class="note warn">
+    <h4>A warning worth heeding</h4>
+    <p><code>RuntimeWarning: the cross-fitted representer has nu_hat^2 = -1.48 &lt;= 0</code></p>
+    <p><span class="m">\(\hat\nu^2\)</span> estimates <span class="m">\(E[\alpha_0^2]&gt;0\)</span>. A negative value means the Riesz fit has failed — almost always an over-wide basis. <strong>Do not report that estimate.</strong> Add <code>ridge=</code>, narrow the basis, or switch to <code>AdditiveFeatures</code>.</p>
+  </div>
+</section>
+
+<section id="beyond">
+  <h2>Beyond the papers</h2>
+  <table class="tbl api">
+    <tbody>
+      <tr><td>Cluster-robust variance</td><td>Section 5.1 <em>requires</em> it for repeated observations but supplies no estimator. <code>cluster=</code> keeps whole clusters inside a fold and adjusts the variance.</td></tr>
+      <tr><td>Multiplier bootstrap</td><td>The papers give only normal intervals; the influence values are already in hand.</td></tr>
+      <tr><td>Both parameterizations, kept apart</td><td>The two sources grid the same region differently. Conflating them would misstate every robustness value.</td></tr>
+      <tr><td>Rate diagnostics you can print</td><td>Eqs. (32), (35), (45) and (49) evaluated from the fitted objects, so the conditions are checkable rather than merely assumed.</td></tr>
+      <tr><td>Repeated cross-fitting</td><td>Median-aggregated across splits, as the parent paper's own application does.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Honest limitations</h3>
+  <ul class="limits">
+    <li><strong>The paper's own application is not reproducible here.</strong> Its product data is scraped from Keepa.com and is not public. <code>pragdml</code> reproduces the paper's <em>arithmetic</em> — all eighteen Table 3 endpoints to the last printed digit — but not its data.</li>
+    <li><strong>No reference implementation exists</strong> for the target paper. Compatibility evidence is the ATE special case against <code>DoubleML</code>, plus the parent paper's published numbers.</li>
+    <li><strong>The sensitivity parameters are assumptions.</strong> The package estimates the scale; the strengths and the alignment are yours to defend.</li>
+    <li><strong>Oracle bounds are rate shapes.</strong> The universal constants are unspecified in the paper; reported values use <span class="m">\(C=1\)</span>.</li>
+  </ul>
+</section>
+
+<section id="refs">
+  <h2>References</h2>
+  <ol class="refs">
+    <li>A. Aradillas Fernández, V. Chernozhukov, C. Cinelli, S. Klaassen, W. Newey, M. Spindler, J. Teichert-Kluge &amp; S. Vijaykumar (2026). <em>Pragmatic DML with AI-Learned Representations.</em> <a href="https://arxiv.org/abs/2610.01935">arXiv:2610.01935</a></li>
+    <li>V. Chernozhukov, C. Cinelli, W. K. Newey, A. Sharma &amp; V. Syrgkanis (2026). <em>Long Story Short: Omitted Variable Bias in Causal Machine Learning.</em> Review of Economics and Statistics. <a href="https://doi.org/10.1162/REST.a.1705">doi:10.1162/REST.a.1705</a></li>
+    <li>V. Chernozhukov, W. K. Newey &amp; R. Singh (2022). <em>Automatic Debiased Machine Learning of Causal and Structural Effects.</em> Econometrica 90(3):967–1027. <a href="https://doi.org/10.3982/ECTA18515">doi:10.3982/ECTA18515</a></li>
+    <li>V. Chernozhukov, D. Chetverikov, M. Demirer, E. Duflo, C. Hansen, W. Newey &amp; J. Robins (2018). <em>Double/Debiased Machine Learning.</em> The Econometrics Journal 21(1):C1–C68. <a href="https://doi.org/10.1111/ectj.12097">doi:10.1111/ectj.12097</a></li>
+    <li>S. Vijaykumar (2021). <em>Localization, Convexity, and Star Aggregation.</em> NeurIPS 34:4570–4581. <a href="https://arxiv.org/abs/2105.08866">arXiv:2105.08866</a></li>
+    <li>T. Liang, A. Rakhlin &amp; K. Sridharan (2015). <em>Learning with Square Loss: Localization through Offset Rademacher Complexity.</em> COLT.</li>
+    <li>J.-Y. Audibert (2007). <em>Progressive Mixture Rules are Deviation Suboptimal.</em> NeurIPS 20.</li>
+    <li>C. Cinelli &amp; C. Hazlett (2020). <em>Making Sense of Sensitivity.</em> JRSS-B 82(1):39–67. <a href="https://doi.org/10.1111/rssb.12348">doi:10.1111/rssb.12348</a></li>
+  </ol>
+  <p class="small">All DOIs verified 17 October 2026.</p>
+
+  <h3>Citing</h3>
+<pre><code class="language-bibtex">@software{roudane2026pragdml,
+  author  = {Roudane, Merwan},
+  title   = {pragdml: Pragmatic double machine learning with AI-learned representations},
+  year    = {2026},
+  version = {0.1.0},
+  url     = {https://github.com/merwanroudane/PragDML}
+}</code></pre>
+  <p class="small">Please also cite the papers the package implements (references 1 and 2).</p>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="author">
+      <h3>Dr Merwan Roudane</h3>
+      <p><a href="mailto:merwanroudane920@gmail.com">merwanroudane920@gmail.com</a></p>
+      <p><a href="https://github.com/merwanroudane">github.com/merwanroudane</a></p>
+    </div>
+    <div class="links">
+      <h4>This package</h4>
+      <a href="https://github.com/merwanroudane/PragDML">Repository</a>
+      <a href="https://pypi.org/project/pragdml/">PyPI</a>
+      <a href="methods.md">Methods</a>
+      <a href="https://github.com/merwanroudane/PragDML/blob/main/CHANGELOG.md">Changelog</a>
+    </div>
+    <div class="links">
+      <h4>Related work</h4>
+      <a href="https://cran.r-project.org/package=QuantileOnQuantile">QuantileOnQuantile</a>
+      <a href="https://github.com/merwanroudane">mqqr · qqkrls · mqqcause</a>
+    </div>
+    <div class="links">
+      <h4>Papers</h4>
+      <a href="https://arxiv.org/abs/2610.01935">Pragmatic DML (2026)</a>
+      <a href="https://doi.org/10.1162/REST.a.1705">Long Story Short (2026)</a>
+    </div>
+  </div>
+  <div class="wrap bottom"><p>MIT licensed · © 2026 Merwan Roudane</p></div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="assets/site.js"></script>
+</body>
+</html>

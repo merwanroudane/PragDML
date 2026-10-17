@@ -1,0 +1,84 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pragdml"
+version = "0.1.0"
+description = "Pragmatic double machine learning with AI-learned representations: Riesz regression, star aggregation and omitted-information sensitivity analysis"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+    { name = "Dr Merwan Roudane", email = "merwanroudane920@gmail.com" },
+]
+maintainers = [
+    { name = "Dr Merwan Roudane", email = "merwanroudane920@gmail.com" },
+]
+keywords = [
+    "double machine learning",
+    "debiased machine learning",
+    "causal inference",
+    "Riesz representer",
+    "sensitivity analysis",
+    "omitted variable bias",
+    "embeddings",
+    "representation learning",
+    "econometrics",
+    "star aggregation",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: Scientific/Engineering :: Mathematics",
+]
+dependencies = [
+    "numpy>=1.23",
+    "scipy>=1.9",
+    "pandas>=1.5",
+    "scikit-learn>=1.1",
+    "matplotlib>=3.6",
+    "joblib>=1.2",
+]
+
+[project.optional-dependencies]
+interactive = ["plotly>=5.15"]
+boost = ["lightgbm>=4.0"]
+text = ["sentence-transformers>=2.2"]
+test = ["pytest>=7.0", "statsmodels>=0.14", "DoubleML>=0.7"]
+dev = [
+    "pytest>=7.0",
+    "statsmodels>=0.14",
+    "DoubleML>=0.7",
+    "plotly>=5.15",
+    "build>=1.0",
+    "twine>=4.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/merwanroudane/PragDML"
+Documentation = "https://merwanroudane.github.io/PragDML/"
+Repository = "https://github.com/merwanroudane/PragDML"
+Issues = "https://github.com/merwanroudane/PragDML/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+pragdml = ["datasets/*.csv.gz", "datasets/*.md"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+filterwarnings = [
+    "ignore::DeprecationWarning:matplotlib.*",
+    "ignore::UserWarning:sklearn.*",
+]
