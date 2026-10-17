@@ -11,7 +11,7 @@ authors:
   - family-names: Roudane
     given-names: Merwan
     email: merwanroudane920@gmail.com
-version: 0.1.0
+version: 0.1.1
 date-released: "2026-10-17"
 license: MIT
 repository-code: "https://github.com/merwanroudane/PragDML"

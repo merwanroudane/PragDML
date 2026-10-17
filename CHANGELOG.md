@@ -6,6 +6,19 @@ All notable changes to `pragdml` are recorded here. The format follows
 paper this implements is a 2026 preprint and no reference implementation exists
 to pin behaviour against, so the API may still move.
 
+## [0.1.1] - 2026-10-17
+
+### Fixed
+
+- **README links now render on PyPI.** The two figures and four document links
+  used repository-relative paths, which have no meaning on the PyPI project page:
+  PyPI dropped both images entirely and the `LICENSE`, `CHANGELOG.md` and
+  `docs/methods.md` links pointed nowhere. All six are now absolute
+  (`raw.githubusercontent.com` for images, `github.com/.../blob/main` for
+  documents), so the project page renders the same content as the repository.
+
+No functional changes; the library code is identical to 0.1.0.
+
 ## [0.1.0] - 2026-10-17
 
 First release.

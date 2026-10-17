@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pragdml"
-version = "0.1.0"
+version = "0.1.1"
 description = "Pragmatic double machine learning with AI-learned representations: Riesz regression, star aggregation and omitted-information sensitivity analysis"
 readme = "README.md"
 requires-python = ">=3.10"

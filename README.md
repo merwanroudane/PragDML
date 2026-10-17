@@ -4,7 +4,7 @@
 
 [![PyPI](https://img.shields.io/pypi/v/pragdml.svg)](https://pypi.org/project/pragdml/)
 [![Python](https://img.shields.io/pypi/pyversions/pragdml.svg)](https://pypi.org/project/pragdml/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/merwanroudane/PragDML/blob/main/LICENSE)
 [![Tests](https://github.com/merwanroudane/PragDML/actions/workflows/tests.yml/badge.svg)](https://github.com/merwanroudane/PragDML/actions)
 
 A Python implementation of **Pragmatic DML with AI-Learned Representations**
@@ -164,7 +164,7 @@ from pragdml._plots import plot_sensitivity_contour
 plot_sensitivity_contour(sa, cy2_max=0.12, cd_share_max=0.12, rho=1.0)
 ```
 
-![Sensitivity contour](docs/assets/pension_sensitivity_contour.png)
+![Sensitivity contour](https://raw.githubusercontent.com/merwanroudane/PragDML/main/docs/assets/pension_sensitivity_contour.png)
 
 Every point is a confounding scenario. The colour is the lower 95% bound on the
 true effect. The **red dashed line is where that bound hits zero** — beyond it,
@@ -202,7 +202,7 @@ print(cmp.summary())
 | all | 7805 | 1350 | 5159 | 10452 |
 | Star aggregate | 8019 | 1315 | 5442 | 10597 |
 
-![By information set](docs/assets/pension_information_sets.png)
+![By information set](https://raw.githubusercontent.com/merwanroudane/PragDML/main/docs/assets/pension_information_sets.png)
 
 Each row is a **different population target** `θ_λ`, not a competing estimate of
 one number. Reading them: demographics alone barely adjusts anything; the economic
@@ -347,7 +347,7 @@ from pragdml.diagnostics import (omitted_information_gap, target_adaptivity,
 ## Methods: step → equation map
 
 Every block of code is named against the paper. The full map is in
-[`docs/methods.md`](docs/methods.md); the essentials:
+[`docs/methods.md`](https://github.com/merwanroudane/PragDML/blob/main/docs/methods.md); the essentials:
 
 | Paper | Code |
 |---|---|
@@ -569,11 +569,11 @@ Please also cite the papers the package implements (references 1 and 2 above).
 
 ## Changelog
 
-See [CHANGELOG.md](CHANGELOG.md).
+See [CHANGELOG.md](https://github.com/merwanroudane/PragDML/blob/main/CHANGELOG.md).
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+MIT. See [LICENSE](https://github.com/merwanroudane/PragDML/blob/main/LICENSE).
 
 ## Author
 
