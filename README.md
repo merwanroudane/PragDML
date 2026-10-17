@@ -560,7 +560,7 @@ All DOIs verified 17 October 2026.
   author  = {Roudane, Merwan},
   title   = {pragdml: Pragmatic double machine learning with AI-learned representations},
   year    = {2026},
-  version = {0.1.0},
+  version = {0.1.1},
   url     = {https://github.com/merwanroudane/PragDML}
 }
 ```
