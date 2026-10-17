@@ -458,6 +458,14 @@ Run it:
 python my_analysis.py
 ```
 
+You will get about **$3,980**. That is the *default* specification, which is
+linear in the covariates — and as [Practical guidance](#practical-guidance)
+explains, that is too restrictive for this dataset. The headline **$7,855** comes
+from the spline specification shown in
+[the worked example](#the-complete-worked-example-real-data). Seeing the two
+differ is the lesson, not a bug: how you model the covariates matters more here
+than anything else you will choose.
+
 ### 5. Use your own data
 
 If your data is in Excel or CSV:
